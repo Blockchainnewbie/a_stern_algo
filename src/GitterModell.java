@@ -10,7 +10,7 @@ public class GitterModell {
 
 
     // Konstruktor
-    public GitterModell( int spalten, int zeilen)
+    public GitterModell( int zeilen, int spalten)
     {
         this.spalten = spalten;
         this.zeilen = zeilen;
@@ -54,6 +54,22 @@ public class GitterModell {
 
         return nachbarn;
     }
+
+
+    public ZellenZustand getZustand(GitterPosition pos) 
+    {
+        int zeile  = pos.getZeile();
+        int spalte = pos.getSpalte();
+        return gitter[zeile][spalte];
+    }
+
+    public void setZustand(GitterPosition pos, ZellenZustand zustand) 
+    {
+        int zeile  = pos.getZeile();
+        int spalte = pos.getSpalte();
+        gitter[zeile][spalte] = zustand;
+    }
+
 
     // Getter und Setter
     /**
