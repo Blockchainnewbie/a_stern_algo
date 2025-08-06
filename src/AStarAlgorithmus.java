@@ -8,82 +8,95 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 /**
- * Einfach lesbare Implementierung des A*-Algorithmus.
+ * Implementiert den A*-Suchalgorithmus zur Wegfindung in einem Gitter.
+ * Diese Klasse nutzt eine Heuristik, um den kürzesten Weg von einem Start- zu einem Zielpunkt zu finden.
  */
 public class AStarAlgorithmus {
-    private final GitterModell modell;
-    private final Heuristik heuristik;
+    private final GitterModell modell; // Das Gitter, in dem der Weg gefunden wird.
+    private final Heuristik heuristik; // Die Heuristik zur Schätzung der Kosten bis zum Ziel.
 
+    /**
+     * Konstruktor für den A*-Algorithmus.
+     * @param modell Das Gittermodell.
+     * @param heuristik Die zu verwendende Heuristik.
+     */
     public AStarAlgorithmus(GitterModell modell, Heuristik heuristik) {
         this.modell = modell;
         this.heuristik = heuristik;
     }
 
     /**
-     * Findet den kürzesten Weg von start bis ziel.
-     * @return Liste der Positionen im Weg oder leer, wenn kein Weg gefunden.
+     * Findet den kürzesten Weg von einer Start- zu einer Zielposition.
+     * @param start Die Startposition.
+     * @param ziel Die Zielposition.
+     * @return Eine Liste von GitterPositionen, die den Pfad repräsentieren, oder eine leere Liste, wenn kein Pfad gefunden wurde.
      */
     public List<GitterPosition> findeWeg(GitterPosition start, GitterPosition ziel) {
-        // Menge der bereits untersuchten Knoten
+        // Die Menge der bereits besuchten und ausgewerteten Knoten.
         Set<GitterPosition> geschlosseneMenge = new HashSet<>();
         
-        // Prioritätswarteschlange sortiert nach f = g + h
+        // Eine Prioritätswarteschlange für die zu besuchenden Knoten, sortiert nach den f-Kosten (g + h).
         PriorityQueue<KnotenEintrag> offeneListe = new PriorityQueue<>(
             (e1, e2) -> Double.compare(e1.getGKosten() + e1.getHKosten(),
                                       e2.getGKosten() + e2.getHKosten())
         );
 
-        // Map speichert für jede Position den besten bekannten Eintrag
+        // Eine Map, die jeder Position den besten bisher gefundenen KnotenEintrag zuordnet.
         Map<GitterPosition, KnotenEintrag> positionZuEintrag = new HashMap<>();
 
-        // Startknoten anlegen (g=0, h=heuristik(start,ziel))
+        // Initialisierung des Startknotens.
         double startHeuristik = heuristik.berechne(start, ziel);
         KnotenEintrag startEintrag = new KnotenEintrag(start, 0, startHeuristik, null);
         offeneListe.add(startEintrag);
         positionZuEintrag.put(start, startEintrag);
 
+        // Hauptschleife des Algorithmus.
         while (!offeneListe.isEmpty()) {
+            // Wähle den Knoten mit den niedrigsten f-Kosten.
             KnotenEintrag aktuellerEintrag = offeneListe.poll();
             GitterPosition aktuellePosition = aktuellerEintrag.getPosition();
 
-            // Ziel erreicht?
+            // Wenn das Ziel erreicht ist, den Pfad rekonstruieren und zurückgeben.
             if (aktuellePosition.equals(ziel)) {
                 return bauePfad(aktuellerEintrag);
             }
 
+            // Füge die aktuelle Position zur geschlossenen Menge hinzu.
             geschlosseneMenge.add(aktuellePosition);
 
-            // Durchlaufe alle Nachbarn
+            // Untersuche alle Nachbarn der aktuellen Position.
             for (GitterPosition nachbar : modell.getNachbarn(aktuellePosition)) {
-                // Hindernisse und schon bearbeitete Positionen überspringen
+                // Überspringe Hindernisse und bereits besuchte Knoten.
                 if (geschlosseneMenge.contains(nachbar)
                     || modell.getZustand(nachbar) == ZellenZustand.HINDERNIS) {
                     continue;
                 }
 
-                // Kosten bis Nachbar (alle Kanten haben Kosten 1)
-                double gNeu = aktuellerEintrag.getGKosten() + 1;
+                // Berechne die neuen g-Kosten für den Nachbarn.
+                double gNeu = aktuellerEintrag.getGKosten() + 1; // Kantenkosten sind 1.
                 KnotenEintrag vorhandenerEintrag = positionZuEintrag.get(nachbar);
 
-                // Wenn neuer Weg besser ist oder Position noch nicht besucht
+                // Wenn der neue Weg zum Nachbarn kürzer ist oder der Nachbar noch nicht besucht wurde.
                 if (vorhandenerEintrag == null || gNeu < vorhandenerEintrag.getGKosten()) {
                     double hNeu = heuristik.berechne(nachbar, ziel);
                     KnotenEintrag neuerEintrag = new KnotenEintrag(nachbar, gNeu, hNeu, aktuellerEintrag);
 
-                    // Update Positionseintrag
+                    // Aktualisiere den Eintrag für den Nachbarn in der offenen Liste und der Map.
                     positionZuEintrag.put(nachbar, neuerEintrag);
-                    offeneListe.remove(vorhandenerEintrag);
+                    offeneListe.remove(vorhandenerEintrag); // Entferne den alten, schlechteren Eintrag.
                     offeneListe.add(neuerEintrag);
                 }
             }
         }
 
-        // Kein Weg gefunden
+        // Wenn die offene Liste leer ist und das Ziel nicht erreicht wurde, gibt es keinen Pfad.
         return Collections.emptyList();
     }
 
     /**
-     * Rekonstruiert den Weg, indem es Vorgänger rückwärts verfolgt.
+     * Rekonstruiert den Pfad vom Zielknoten zurück zum Startknoten.
+     * @param zielEintrag Der KnotenEintrag des Ziels.
+     * @return Eine Liste von GitterPositionen, die den Pfad vom Start zum Ziel darstellt.
      */
     private List<GitterPosition> bauePfad(KnotenEintrag zielEintrag) {
         List<GitterPosition> pfad = new ArrayList<>();
@@ -92,18 +105,19 @@ public class AStarAlgorithmus {
             pfad.add(cursor.getPosition());
             cursor = cursor.getVorgaenger();
         }
-        Collections.reverse(pfad);
+        Collections.reverse(pfad); // Umkehren, um den Pfad vom Start zum Ziel zu erhalten.
         return pfad;
     }
 
     /**
-     * Hilfsklasse für Einträge in der A*-Suchliste.
+     * Eine private Hilfsklasse, die einen Knoten im Suchgraphen darstellt.
+     * Sie speichert die Position, die g- und h-Kosten sowie den Vorgängerknoten.
      */
     private static class KnotenEintrag {
-        private final GitterPosition position;
-        private final double gKosten;
-        private final double hKosten;
-        private final KnotenEintrag vorgaenger;
+        private final GitterPosition position; // Die Position des Knotens im Gitter.
+        private final double gKosten; // Die Kosten vom Startknoten bis zu diesem Knoten.
+        private final double hKosten; // Die geschätzten Kosten von diesem Knoten bis zum Ziel (Heuristik).
+        private final KnotenEintrag vorgaenger; // Der Vorgängerknoten auf dem bisher besten Pfad.
 
         KnotenEintrag(GitterPosition position,
                      double gKosten,
