@@ -1,10 +1,12 @@
+package astar;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.PriorityQueue;
+//import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet; // Neu für den TreeSet
 
@@ -43,6 +45,21 @@ public class AStarAlgorithmus {
                                       e2.getGKosten() + e2.getHKosten())
         ); */
 
+        /* Wechsel von PriorityQueue zu TreeSet nach lesen von 
+        https://www.happycoders.eu/de/algorithmen/a-stern-algorithmus-java/ 
+        // Szenario: Großes Gitter 100x100, viele Knoten in der offenen Liste
+
+        // PriorityQueue:
+        // - 1000 Knoten in der Queue
+        // - remove() muss alle 1000 durchsuchen → O(n) = 1000 Operationen
+        // - Bei vielen Updates: sehr langsam!
+
+        // TreeSet:
+        // - 1000 Knoten im Set
+        // - remove() nutzt binären Suchbaum → O(log n) = ~10 Operationen
+        // - 100x schneller bei 1000 Elementen!
+        */
+        
         // Ein TreeSet für die zu besuchenden Knoten, sortiert nach den f-Kosten (g + h).
         TreeSet<KnotenEintrag> offeneListe = new TreeSet<>((e1, e2) -> {
             // Vergleich der f-Kosten
@@ -109,14 +126,15 @@ public class AStarAlgorithmus {
                     double hNeu = heuristik.berechne(nachbar, ziel);
                     KnotenEintrag neuerEintrag = new KnotenEintrag(nachbar, gNeu, hNeu, aktuellerEintrag);
 
-                    // Aktualisiere den Eintrag für den Nachbarn in der offenen Liste und der Map.
-                    positionZuEintrag.put(nachbar, neuerEintrag);
-
-                    // Nur entfernen wenn der vorhandene Eintrag nicht null ist
+                    // WICHTIG: Erst entfernen, dann Kosten ändern, dann einfügen!
                     if (vorhandenerEintrag != null) {
+                        // TreeSet merkt Kostenänderungen nicht automatisch
+                        // Daher: remove() VOR der Kostenaktualisierung!
                         offeneListe.remove(vorhandenerEintrag);
                     }
 
+                    // Aktualisiere den Eintrag für den Nachbarn
+                    positionZuEintrag.put(nachbar, neuerEintrag);
                     offeneListe.add(neuerEintrag);
                 }
             }
