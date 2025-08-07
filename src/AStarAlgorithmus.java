@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.TreeSet; // Neu für den TreeSet
 
 /**
  * Implementiert den A*-Suchalgorithmus zur Wegfindung in einem Gitter.
@@ -35,11 +36,28 @@ public class AStarAlgorithmus {
         // Die Menge der bereits besuchten und ausgewerteten Knoten.
         Set<GitterPosition> geschlosseneMenge = new HashSet<>();
         
+
         // Eine Prioritätswarteschlange für die zu besuchenden Knoten, sortiert nach den f-Kosten (g + h).
-        PriorityQueue<KnotenEintrag> offeneListe = new PriorityQueue<>(
+        /*  PriorityQueue<KnotenEintrag> offeneListe = new PriorityQueue<>(
             (e1, e2) -> Double.compare(e1.getGKosten() + e1.getHKosten(),
                                       e2.getGKosten() + e2.getHKosten())
-        );
+        ); */
+
+        // Ein TreeSet für die zu besuchenden Knoten, sortiert nach den f-Kosten (g + h).
+        TreeSet<KnotenEintrag> offeneListe = new TreeSet<>((e1, e2) -> {
+            // Vergleich der f-Kosten
+            int vergleich = Double.compare(e1.getGKosten() + e1.getHKosten(),
+                                          e2.getGKosten() + e2.getHKosten());
+            
+            // Bei gleichen f-Kosten: Unterscheide nach Position, damit keine Elemente verloren gehen
+            if (vergleich == 0) {
+                // Verwende hashCode als eindeutigen Identifier
+                return Integer.compare(e1.getPosition().hashCode(), e2.getPosition().hashCode());
+            }
+            
+            return vergleich;
+        });
+
 
         // Eine Map, die jeder Position den besten bisher gefundenen KnotenEintrag zuordnet.
         Map<GitterPosition, KnotenEintrag> positionZuEintrag = new HashMap<>();
@@ -53,7 +71,11 @@ public class AStarAlgorithmus {
         // Hauptschleife des Algorithmus.
         while (!offeneListe.isEmpty()) {
             // Wähle den Knoten mit den niedrigsten f-Kosten.
-            KnotenEintrag aktuellerEintrag = offeneListe.poll();
+            /* KnotenEintrag aktuellerEintrag = offeneListe.first();
+            offeneListe.remove(aktuellerEintrag); 
+            oder mit pollFirst */
+            KnotenEintrag aktuellerEintrag = offeneListe.pollFirst(); // nun pollFirst vorher nur poll Bei TreeSet gibt es diese Kombination als pollFirst(), die das kleinste Element zurückgibt und entfernt.
+
             GitterPosition aktuellePosition = aktuellerEintrag.getPosition();
 
             // Wenn das Ziel erreicht ist, den Pfad rekonstruieren und zurückgeben.
@@ -66,10 +88,10 @@ public class AStarAlgorithmus {
 
             // Untersuche alle Nachbarn der aktuellen Position.
             /*
-             * FÜR JEDEN nachbar In getNachbarn(aktuellePosition) TUE
-             * WENN nachbar IN geschlosseneMenge ODER getZustand(nachbar) = HINDERNIS 
-             *  DANN SETZE FORT MIT NÄCHSTEM NACHBARN
-             * ENDE WENN
+             FÜR JEDEN nachbar In getNachbarn(aktuellePosition) TUE
+             WENN nachbar IN geschlosseneMenge ODER getZustand(nachbar) = HINDERNIS 
+             DANN SETZE FORT MIT NÄCHSTEM NACHBARN
+             ENDE WENN
              */
             for (GitterPosition nachbar : modell.getNachbarn(aktuellePosition)) {
                 // Überspringe Hindernisse und bereits besuchte Knoten.
@@ -89,7 +111,12 @@ public class AStarAlgorithmus {
 
                     // Aktualisiere den Eintrag für den Nachbarn in der offenen Liste und der Map.
                     positionZuEintrag.put(nachbar, neuerEintrag);
-                    offeneListe.remove(vorhandenerEintrag); // Entferne den alten, schlechteren Eintrag.
+
+                    // Nur entfernen wenn der vorhandene Eintrag nicht null ist
+                    if (vorhandenerEintrag != null) {
+                        offeneListe.remove(vorhandenerEintrag);
+                    }
+
                     offeneListe.add(neuerEintrag);
                 }
             }
