@@ -65,6 +65,12 @@ public class AStarAlgorithmus {
             geschlosseneMenge.add(aktuellePosition);
 
             // Untersuche alle Nachbarn der aktuellen Position.
+            /*
+             * FÜR JEDEN nachbar In getNachbarn(aktuellePosition) TUE
+             * WENN nachbar IN geschlosseneMenge ODER getZustand(nachbar) = HINDERNIS 
+             *  DANN SETZE FORT MIT NÄCHSTEM NACHBARN
+             * ENDE WENN
+             */
             for (GitterPosition nachbar : modell.getNachbarn(aktuellePosition)) {
                 // Überspringe Hindernisse und bereits besuchte Knoten.
                 if (geschlosseneMenge.contains(nachbar)
@@ -74,7 +80,7 @@ public class AStarAlgorithmus {
 
                 // Berechne die neuen g-Kosten für den Nachbarn.
                 double gNeu = aktuellerEintrag.getGKosten() + 1; // Kantenkosten sind 1.
-                KnotenEintrag vorhandenerEintrag = positionZuEintrag.get(nachbar);
+                KnotenEintrag vorhandenerEintrag = positionZuEintrag.get(nachbar); // Prüft ob Position schon besucht wurde, ob es einen Eintrag gibt und wie gut der bisher besuchte Weg war
 
                 // Wenn der neue Weg zum Nachbarn kürzer ist oder der Nachbar noch nicht besucht wurde.
                 if (vorhandenerEintrag == null || gNeu < vorhandenerEintrag.getGKosten()) {
@@ -112,6 +118,13 @@ public class AStarAlgorithmus {
     /**
      * Eine private Hilfsklasse, die einen Knoten im Suchgraphen darstellt.
      * Sie speichert die Position, die g- und h-Kosten sowie den Vorgängerknoten.
+     * Bietet eine saubere objektorientierte Lösung an.
+     * 1. bündelte zusammengehörige Daten
+     * 2. macht den Code lesbarer
+     * 3. die Algo-Logik wird klarer dargestellt
+     * 4. die Pfadrückverfolgung wird elegant ermöglicht
+     * Alternativen wären hier: separate Datenstrukturen, die erweiterte GitterPosition-Klasse
+     * oder Mehrdimensionale Arrays/Maps
      */
     private static class KnotenEintrag {
         private final GitterPosition position; // Die Position des Knotens im Gitter.
